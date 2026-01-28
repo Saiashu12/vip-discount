@@ -11,14 +11,8 @@ const INITIAL_CONFIG = {
   excludedVariantIds: [],
 };
 
-/* ------------------------------------------------------------------ */
-/* LOADER – Fetch products + existing excluded variants */
-/* ------------------------------------------------------------------ */
-
 export async function loader({ request }) {
   const { admin } = await authenticate.admin(request);
-
-  // Get shop ID
   const shopId = (
     await (
       await admin.graphql(`
@@ -28,14 +22,12 @@ export async function loader({ request }) {
       `)
     ).json()
   ).data.shop.id;
-
-  // Read saved config
   const configValue = (
     await (
       await admin.graphql(`
         query {
           shop {
-            metafield(namespace: "group_discount", key: "config") {
+            metafield(namespace: "exculde_discount", key: "config") {
               value
             }
           }
@@ -47,8 +39,6 @@ export async function loader({ request }) {
   const config = configValue
     ? JSON.parse(configValue)
     : INITIAL_CONFIG;
-
-  // Fetch products + variants
   const productRes = await (
     await admin.graphql(`
       query {
@@ -68,7 +58,6 @@ export async function loader({ request }) {
     `)
   ).json();
 
-  // Flatten products
   const products = [];
   productRes.data.products.nodes.forEach((product) => {
     product.variants.nodes.forEach((variant) => {
@@ -89,10 +78,6 @@ export async function loader({ request }) {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* ACTION – Save excluded variants to metafield */
-/* ------------------------------------------------------------------ */
-
 export async function action({ request }) {
   const { admin } = await authenticate.admin(request);
   const form = await request.formData();
@@ -108,7 +93,7 @@ export async function action({ request }) {
       metafieldsSet(
         metafields: [{
           ownerId: $ownerId
-          namespace: "group_discount"
+          namespace: "exculde_discoun"
           key: "config"
           type: "json"
           value: $value
@@ -142,8 +127,6 @@ export default function ExcludeProductsPage() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  /* ---------------- Toggle Exclude ---------------- */
-
   const toggleExclude = useCallback((variantId) => {
     setExcludedVariantIds((prev) =>
       prev.includes(variantId)
@@ -151,8 +134,6 @@ export default function ExcludeProductsPage() {
         : [...prev, variantId]
     );
   }, []);
-
-  /* ---------------- Search Filter ---------------- */
 
   const filteredProducts = products.filter((p) => {
     if (!search.trim()) return false;
@@ -168,8 +149,6 @@ export default function ExcludeProductsPage() {
     excludedVariantIds.includes(p.variantId)
   );
 
-  /* ---------------- Save ---------------- */
-
   const handleSave = () => {
     const fd = new FormData();
     fd.append("shopId", shopId);
@@ -180,8 +159,6 @@ export default function ExcludeProductsPage() {
     submit(fd, { method: "post" });
   };
 
-  /* ------------------------------------------------------------------ */
-
   return (
     <div style={{ padding: 24 }}>
       <h2>Exclude Products</h2>
@@ -190,7 +167,6 @@ export default function ExcludeProductsPage() {
         Exclude Product
       </button>
 
-      {/* ---------------- Modal ---------------- */}
       {showModal && (
         <div
           style={{
@@ -247,7 +223,6 @@ export default function ExcludeProductsPage() {
         </div>
       )}
 
-      {/* ---------------- Excluded Table ---------------- */}
       {excludedProducts.length > 0 && (
         <table
           style={{
