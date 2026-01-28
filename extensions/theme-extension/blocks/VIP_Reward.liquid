@@ -1,0 +1,59 @@
+{% if customer and customer.tags contains 'VIP' %}
+  <div id="vip-rewards">
+    <p>
+      Available Reward Points:
+      <span id="vip-points">Loading...</span>
+    </p>
+
+    <input type="number" id="redeem-points" min="1">
+
+    <button id="redeem-btn">Redeem</button>
+  </div>
+
+  <script>
+    
+    const customerId = '{{ customer.id }}';
+
+    fetch(`/apps/vip/api/vip-points?customerId=${encodeURIComponent(customerId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        document.getElementById('vip-points').innerText = d.points;
+      });
+
+    document.getElementById('redeem-btn').onclick = async () => {
+      const points = document.getElementById('redeem-points').value;
+
+      const res = await fetch('/apps/vip/redeem-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId, points }),
+      });
+
+      const data = await res.json();
+      if (data.discountCode) {
+        window.location.href = `/discount/${data.discountCode}?redirect=/checkout`;
+      }
+    };
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "VIP Reward",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "VIP Reward Points"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Redeem Button Text",
+      "default": "Redeem Points"
+    }
+  ]
+}
+{% endschema %}
