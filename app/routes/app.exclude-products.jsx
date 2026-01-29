@@ -93,7 +93,7 @@ export async function action({ request }) {
       metafieldsSet(
         metafields: [{
           ownerId: $ownerId
-          namespace: "exculde_discoun"
+          namespace: "exculde_discount"
           key: "config"
           type: "json"
           value: $value
